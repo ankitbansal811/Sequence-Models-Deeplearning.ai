@@ -33,7 +33,7 @@
 
 # Please run the following cell to load all the packages required in this assignment. This may take a few minutes. 
 
-# In[ ]:
+# In[1]:
 
 from __future__ import print_function
 import IPython
@@ -66,7 +66,7 @@ from keras import backend as K
 # 
 # You will train your algorithm on a corpus of Jazz music. Run the cell below to listen to a snippet of the audio from the training set:
 
-# In[ ]:
+# In[2]:
 
 IPython.display.Audio('./data/30s_seq.mp3')
 
@@ -82,7 +82,7 @@ IPython.display.Audio('./data/30s_seq.mp3')
 # 
 # Run the following code to load the raw music data and preprocess it into values. This might take a few minutes.
 
-# In[ ]:
+# In[3]:
 
 X, Y, n_values, indices_values = load_music_utils()
 print('number of training examples:', X.shape[0])
@@ -136,7 +136,7 @@ print('Shape of Y:', Y.shape)
 # * The model takes input X of shape $(m, T_x, 78)$ and labels Y of shape $(T_y, m, 78)$. 
 # * We will use an LSTM with hidden states that have $n_{a} = 64$ dimensions.
 
-# In[ ]:
+# In[4]:
 
 # number of dimensions for the hidden state of each LSTM cell.
 n_a = 64 
@@ -168,7 +168,7 @@ n_a = 64
 #     - [Dense()](https://keras.io/layers/core/#dense): A regular fully-connected neural network layer.
 # 
 
-# In[ ]:
+# In[5]:
 
 n_values = 78 # number of music values
 reshapor = Reshape((1, n_values))                        # Used in Step 2.B of djmodel(), below
@@ -245,7 +245,7 @@ densor = Dense(n_values, activation='softmax')     # Used in Step 2.D
 #     * Choose the appropriate variables for the input tensor, hidden state, cell state, and output.
 # * See the documentation for [Model](https://keras.io/models/model/)
 
-# In[ ]:
+# In[6]:
 
 # GRADED FUNCTION: djmodel
 
@@ -274,24 +274,24 @@ def djmodel(Tx, n_a, n_values):
     
     ### START CODE HERE ### 
     # Step 1: Create empty list to append the outputs while you iterate (≈1 line)
-    outputs = None
+    outputs = []
     
     # Step 2: Loop
     for t in range(Tx):
         
         # Step 2.A: select the "t"th time step vector from X. 
-        x = None
+        x = Lambda(lambda z : X[:, t, :])(X)
         # Step 2.B: Use reshapor to reshape x to be (1, n_values) (≈1 line)
-        x = None
+        x = reshapor(x)
         # Step 2.C: Perform one step of the LSTM_cell
-        a, _, c = None
+        a, _, c = LSTM_cell(inputs=x, initial_state=[a, c])
         # Step 2.D: Apply densor to the hidden state output of LSTM_Cell
-        out = None
+        out = densor(a)
         # Step 2.E: add the output to "outputs"
-        None
-        
+        outputs.append(out)
+    print(x, out)
     # Step 3: Create model instance
-    model = None
+    model = Model(inputs=[X, a0, c0], outputs=outputs)
     
     ### END CODE HERE ###
     
@@ -303,12 +303,12 @@ def djmodel(Tx, n_a, n_values):
 # * We will use `Tx=30`, `n_a=64` (the dimension of the LSTM activations), and `n_values=78`. 
 # * This cell may take a few seconds to run. 
 
-# In[ ]:
+# In[7]:
 
 model = djmodel(Tx = 30 , n_a = 64, n_values = 78)
 
 
-# In[ ]:
+# In[8]:
 
 # Check your model
 model.summary()
@@ -329,7 +329,7 @@ model.summary()
 #     - optimizer: Adam optimizer
 #     - Loss function: categorical cross-entropy (for multi-class classification)
 
-# In[ ]:
+# In[9]:
 
 opt = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, decay=0.01)
 
@@ -339,7 +339,7 @@ model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy
 # #### Initialize hidden state and cell state
 # Finally, let's initialize `a0` and `c0` for the LSTM's initial state to be zero. 
 
-# In[ ]:
+# In[10]:
 
 m = 60
 a0 = np.zeros((m, n_a))
@@ -352,7 +352,12 @@ c0 = np.zeros((m, n_a))
 #     - `list(Y)` is a list with 30 items, where each of the list items is of shape (60,78). 
 #     - Lets train for 100 epochs. This will take a few minutes. 
 
-# In[ ]:
+# In[11]:
+
+X.shape
+
+
+# In[12]:
 
 model.fit([X, a0, c0], list(Y), epochs=100)
 
@@ -451,7 +456,7 @@ model.fit([X, a0, c0], list(Y), epochs=100)
 # * Choose the appropriate variables for the input tensor, hidden state, cell state, and output.
 # * **Hint**: the inputs to the model are the **initial** inputs and states.
 
-# In[ ]:
+# In[13]:
 
 # GRADED FUNCTION: music_inference_model
 
@@ -482,28 +487,28 @@ def music_inference_model(LSTM_cell, densor, n_values = 78, n_a = 64, Ty = 100):
 
     ### START CODE HERE ###
     # Step 1: Create an empty list of "outputs" to later store your predicted values (≈1 line)
-    outputs = None
+    outputs = []
     
     # Step 2: Loop over Ty and generate a value at every time step
-    for t in range(None):
+    for t in range(Ty):
         
         # Step 2.A: Perform one step of LSTM_cell (≈1 line)
-        a, _, c = None
+        a, _, c = LSTM_cell(inputs=x, initial_state=[a, c])
         
         # Step 2.B: Apply Dense layer to the hidden state output of the LSTM_cell (≈1 line)
-        out = None
+        out = densor(a)
 
         # Step 2.C: Append the prediction "out" to "outputs". out.shape = (None, 78) (≈1 line)
-        None
+        outputs.append(out)
         
         # Step 2.D: 
         # Select the next value according to "out",
         # Set "x" to be the one-hot representation of the selected value
         # See instructions above.
-        x = None
+        x = Lambda(one_hot)(out)
         
     # Step 3: Create model instance with the correct "inputs" and "outputs" (≈1 line)
-    inference_model = None
+    inference_model = Model(inputs=[x0, a0, c0], outputs=outputs)
     
     ### END CODE HERE ###
     
@@ -512,12 +517,12 @@ def music_inference_model(LSTM_cell, densor, n_values = 78, n_a = 64, Ty = 100):
 
 # Run the cell below to define your inference model. This model is hard coded to generate 50 values.
 
-# In[ ]:
+# In[14]:
 
 inference_model = music_inference_model(LSTM_cell, densor, n_values = 78, n_a = 64, Ty = 50)
 
 
-# In[ ]:
+# In[15]:
 
 # Check the inference model
 inference_model.summary()
@@ -534,7 +539,7 @@ inference_model.summary()
 # #### Initialize inference model
 # The following code creates the zero-valued vectors you will use to initialize `x` and the LSTM state variables `a` and `c`. 
 
-# In[ ]:
+# In[16]:
 
 x_initializer = np.zeros((1, 1, 78))
 a_initializer = np.zeros((1, n_a))
@@ -569,7 +574,7 @@ c_initializer = np.zeros((1, n_a))
 #         * Or just hard code the number of distinct classes (will pass the grader as well).
 #         * Note that using a global variable such as n_values will not work for grading purposes.
 
-# In[ ]:
+# In[17]:
 
 # GRADED FUNCTION: predict_and_sample
 
@@ -591,17 +596,17 @@ def predict_and_sample(inference_model, x_initializer = x_initializer, a_initial
     
     ### START CODE HERE ###
     # Step 1: Use your inference model to predict an output sequence given x_initializer, a_initializer and c_initializer.
-    pred = None
+    pred = inference_model.predict([x_initializer, a_initializer, c_initializer])
     # Step 2: Convert "pred" into an np.array() of indices with the maximum probabilities
-    indices = None
+    indices = np.argmax(pred, axis=-1)
     # Step 3: Convert indices to one-hot vectors, the shape of the results should be (Ty, n_values)
-    results = None
+    results = to_categorical(y=indices, num_classes=x_initializer.shape[2])
     ### END CODE HERE ###
     
     return results, indices
 
 
-# In[ ]:
+# In[18]:
 
 results, indices = predict_and_sample(inference_model, x_initializer, a_initializer, c_initializer)
 print("np.argmax(results[12]) =", np.argmax(results[12]))
@@ -655,7 +660,7 @@ print("list(indices[12:18]) =", list(indices[12:18]))
 
 # Run the following cell to generate music and record it into your `out_stream`. This can take a couple of minutes.
 
-# In[ ]:
+# In[19]:
 
 out_stream = generate_music(inference_model)
 
@@ -664,7 +669,7 @@ out_stream = generate_music(inference_model)
 # 
 # As a reference, here is a 30 second audio clip we generated using this algorithm. 
 
-# In[ ]:
+# In[20]:
 
 IPython.display.Audio('./data/30s_trained_model.mp3')
 
