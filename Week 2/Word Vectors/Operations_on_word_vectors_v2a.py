@@ -31,7 +31,7 @@
 
 # Let's get started! Run the following cell to load the packages you will need.
 
-# In[ ]:
+# In[1]:
 
 import numpy as np
 from w2v_utils import *
@@ -41,7 +41,7 @@ from w2v_utils import *
 # * For this assignment, we will use 50-dimensional GloVe vectors to represent words. 
 # * Run the following cell to load the `word_to_vec_map`. 
 
-# In[ ]:
+# In[2]:
 
 words, word_to_vec_map = read_glove_vecs('../../readonly/glove.6B.50d.txt')
 
@@ -78,7 +78,7 @@ words, word_to_vec_map = read_glove_vecs('../../readonly/glove.6B.50d.txt')
 # #### Additional Hints
 # * You may find `np.dot`, `np.sum`, or `np.sqrt` useful depending upon the implementation that you choose.
 
-# In[ ]:
+# In[3]:
 
 # GRADED FUNCTION: cosine_similarity
 
@@ -98,20 +98,20 @@ def cosine_similarity(u, v):
     
     ### START CODE HERE ###
     # Compute the dot product between u and v (≈1 line)
-    dot = None
+    dot = np.dot(u, v)
     # Compute the L2 norm of u (≈1 line)
-    norm_u = None
+    norm_u = np.sqrt(np.dot(u, u.T))
     
     # Compute the L2 norm of v (≈1 line)
-    norm_v = None
+    norm_v = np.sqrt(np.dot(v, v.T))
     # Compute the cosine similarity defined by formula (1) (≈1 line)
-    cosine_similarity = None
+    cosine_similarity = dot/norm_u/norm_v
     ### END CODE HERE ###
     
     return cosine_similarity
 
 
-# In[ ]:
+# In[4]:
 
 father = word_to_vec_map["father"]
 mother = word_to_vec_map["mother"]
@@ -174,7 +174,7 @@ print("cosine_similarity(france - paris, rome - italy) = ",cosine_similarity(fra
 # 
 # **Exercise**: Complete the code below to be able to perform word analogies!
 
-# In[ ]:
+# In[5]:
 
 # GRADED FUNCTION: complete_analogy
 
@@ -197,7 +197,7 @@ def complete_analogy(word_a, word_b, word_c, word_to_vec_map):
     
     ### START CODE HERE ###
     # Get the word embeddings e_a, e_b and e_c (≈1-3 lines)
-    e_a, e_b, e_c = None
+    e_a, e_b, e_c = word_to_vec_map[word_a], word_to_vec_map[word_b], word_to_vec_map[word_c]
     ### END CODE HERE ###
     
     words = word_to_vec_map.keys()
@@ -217,13 +217,13 @@ def complete_analogy(word_a, word_b, word_c, word_to_vec_map):
         
         ### START CODE HERE ###
         # Compute cosine similarity between the vector (e_b - e_a) and the vector ((w's vector representation) - e_c)  (≈1 line)
-        cosine_sim = None
+        cosine_sim = cosine_similarity(e_b - e_a, word_to_vec_map[w] - e_c)
         
         # If the cosine_sim is more than the max_cosine_sim seen so far,
             # then: set the new max_cosine_sim to the current cosine_sim and the best_word to the current word (≈3 lines)
-        if None > None:
-            max_cosine_sim = None
-            best_word = None
+        if cosine_sim > max_cosine_sim:
+            max_cosine_sim = cosine_sim
+            best_word = w
         ### END CODE HERE ###
         
     return best_word
@@ -231,7 +231,7 @@ def complete_analogy(word_a, word_b, word_c, word_to_vec_map):
 
 # Run the cell below to test your code, this may take 1-2 minutes.
 
-# In[ ]:
+# In[6]:
 
 triads_to_try = [('italy', 'italian', 'spain'), ('india', 'delhi', 'japan'), ('man', 'woman', 'boy'), ('small', 'smaller', 'large')]
 for triad in triads_to_try:
@@ -298,7 +298,7 @@ for triad in triads_to_try:
 # Lets first see how the GloVe word embeddings relate to gender. You will first compute a vector $g = e_{woman}-e_{man}$, where $e_{woman}$ represents the word vector corresponding to the word *woman*, and $e_{man}$ corresponds to the word vector corresponding to the word *man*. The resulting vector $g$ roughly encodes the concept of "gender". (You might get a more accurate representation if you compute $g_1 = e_{mother}-e_{father}$, $g_2 = e_{girl}-e_{boy}$, etc. and average over them. But just using $e_{woman}-e_{man}$ will give good enough results for now.) 
 # 
 
-# In[ ]:
+# In[7]:
 
 g = word_to_vec_map['woman'] - word_to_vec_map['man']
 print(g)
@@ -306,7 +306,7 @@ print(g)
 
 # Now, you will consider the cosine similarity of different words with $g$. Consider what a positive value of similarity means vs a negative cosine similarity. 
 
-# In[ ]:
+# In[8]:
 
 print ('List of names and their similarities with constructed vector:')
 
@@ -321,7 +321,7 @@ for w in name_list:
 # 
 # But let's try with some other words.
 
-# In[ ]:
+# In[9]:
 
 print('Other words and their similarities:')
 word_list = ['lipstick', 'guns', 'science', 'arts', 'literature', 'warrior','doctor', 'tree', 'receptionist', 
@@ -356,7 +356,7 @@ for w in word_list:
 # where : $u_B = $ and $ u_{\perp} = u - u_B $
 # !--> 
 
-# In[ ]:
+# In[10]:
 
 def neutralize(word, g, word_to_vec_map):
     """
@@ -374,20 +374,20 @@ def neutralize(word, g, word_to_vec_map):
     
     ### START CODE HERE ###
     # Select word vector representation of "word". Use word_to_vec_map. (≈ 1 line)
-    e = None
+    e = word_to_vec_map[word]
     
     # Compute e_biascomponent using the formula given above. (≈ 1 line)
-    e_biascomponent = None
- 
+    e_biascomponent = np.dot(e, g)/np.dot(g.T, g)*g
+    
     # Neutralize e by subtracting e_biascomponent from it 
     # e_debiased should be equal to its orthogonal projection. (≈ 1 line)
-    e_debiased = None
+    e_debiased = e - e_biascomponent
     ### END CODE HERE ###
     
     return e_debiased
 
 
-# In[ ]:
+# In[11]:
 
 e = "receptionist"
 print("cosine similarity between " + e + " and g, before neutralizing: ", cosine_similarity(word_to_vec_map["receptionist"], g))
@@ -452,7 +452,7 @@ print("cosine similarity between " + e + " and g, after neutralizing: ", cosine_
 # 
 # **Exercise**: Implement the function below. Use the equations above to get the final equalized version of the pair of words. Good luck!
 
-# In[ ]:
+# In[12]:
 
 def equalize(pair, bias_axis, word_to_vec_map):
     """
@@ -470,34 +470,34 @@ def equalize(pair, bias_axis, word_to_vec_map):
     
     ### START CODE HERE ###
     # Step 1: Select word vector representation of "word". Use word_to_vec_map. (≈ 2 lines)
-    w1, w2 = None
-    e_w1, e_w2 = None
+    w1, w2 = pair
+    e_w1, e_w2 = word_to_vec_map[w1], word_to_vec_map[w2]
     
     # Step 2: Compute the mean of e_w1 and e_w2 (≈ 1 line)
-    mu = None
-
+    mu = (e_w1 + e_w2)/2
+    
     # Step 3: Compute the projections of mu over the bias axis and the orthogonal axis (≈ 2 lines)
-    mu_B = None
-    mu_orth = None
+    mu_B = np.dot(mu, bias_axis)/np.dot(bias_axis, bias_axis.T)*bias_axis
+    mu_orth = mu - mu_B
 
     # Step 4: Use equations (7) and (8) to compute e_w1B and e_w2B (≈2 lines)
-    e_w1B = None
-    e_w2B = None
-        
+    e_w1B = np.dot(e_w1, bias_axis)/np.dot(bias_axis, bias_axis.T)*bias_axis
+    e_w2B = np.dot(e_w2, bias_axis)/np.dot(bias_axis, bias_axis.T)*bias_axis
+    
     # Step 5: Adjust the Bias part of e_w1B and e_w2B using the formulas (9) and (10) given above (≈2 lines)
-    corrected_e_w1B = None
-    corrected_e_w2B = None
-
+    corrected_e_w1B = np.sqrt(np.abs(1- np.linalg.norm(mu_orth)**2))*(e_w1B-mu_B)/np.linalg.norm(e_w1-mu_orth-mu_B)
+    corrected_e_w2B = np.sqrt(np.abs(1- np.linalg.norm(mu_orth)**2))*(e_w2B-mu_B)/np.linalg.norm(e_w2-mu_orth-mu_B)
+    
     # Step 6: Debias by equalizing e1 and e2 to the sum of their corrected projections (≈2 lines)
-    e1 = None
-    e2 = None
+    e1 = corrected_e_w1B + mu_orth
+    e2 = corrected_e_w2B + mu_orth
                                                                 
     ### END CODE HERE ###
     
     return e1, e2
 
 
-# In[ ]:
+# In[13]:
 
 print("cosine similarities before equalizing:")
 print("cosine_similarity(word_to_vec_map[\"man\"], gender) = ", cosine_similarity(word_to_vec_map["man"], g))
@@ -568,3 +568,8 @@ print("cosine_similarity(e2, gender) = ", cosine_similarity(e2, g))
 # Homemaker? Debiasing Word Embeddings](https://papers.nips.cc/paper/6228-man-is-to-computer-programmer-as-woman-is-to-homemaker-debiasing-word-embeddings.pdf)
 # - The GloVe word embeddings were due to Jeffrey Pennington, Richard Socher, and Christopher D. Manning. (https://nlp.stanford.edu/projects/glove/)
 # 
+
+# In[ ]:
+
+
+
